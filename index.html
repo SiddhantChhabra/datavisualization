@@ -1,0 +1,111 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/4.2.8/d3.min.js" type="text/Javascript">
+        </script>
+        <style>
+            html,body {
+                width: 100%;
+                height: 100%;}
+            
+            p {
+                color: red;
+            }
+            path {
+                fill: cadetblue;
+                cursor: pointer;
+            }
+            path:hover {
+                fill: aquamarine;
+            }
+            #populationText{
+                font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+                font-size: 20px;
+                font-weight: 600;
+                display: flex;
+                flex-flow: column nowrap;
+                padding: 10px;
+                border: 1px solid #ccc;
+                border-radius: 3px;
+                width: 200px;
+                max-width: 200px;
+                background-color: #eee;
+            }
+            #populationText span {
+                margin: 6px;
+            }
+            #viz {
+                background-color: antiquewhite;
+                display: flex;
+                align-items: flex-start;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="viz">
+             <p id="populationText"></p>
+            <svg style="width: 1700px; height: 900px;"></svg>
+           
+           
+        </div>
+        
+        
+        <script>
+            var continentJson = {
+              "AF": "Africa",
+              "AS": "Asia",
+              "EU": "Europe",
+              "NA": "North America",
+              "SA": "South America",
+              "OC": "Oceana"
+            };
+            var countriesData = {};
+            
+            var PromiseWrapper = (xhr, d) => new
+            Promise(resolve => xhr(d, (p) => resolve(p)))
+            
+            Promise.all([PromiseWrapper(d3.json, "world.geojson"),
+                        PromiseWrapper(d3.csv, "countries.csv")
+                        ])
+                    .then(resolve => {
+                          createMap(countries = resolve[0], resolve[1]);
+                        });
+            
+            function createMap(countries, countrystat) {
+                
+                countrystat.forEach(d=> {
+                    countriesData[d.CountryName] = {
+                        population: d.Population,
+                        continentCode: d.ContinentCode
+                    };
+                })
+                var aProjection = d3.geoMercator()
+                                    .scale(140)
+                                    .translate([900, 450])
+                                    
+                var geoPath = d3.geoPath().projection(aProjection);
+                
+                d3.select("svg").selectAll("path").data(countries.features)
+                                .enter()
+                                .append("path")
+                                .attr("d", geoPath).on('mouseover', onHover)
+                                .style("stroke","aliceblue")
+                                .style("stroke-width","1px")
+          
+            }
+            
+            function onHover (d) {
+                var str = '';
+                if(countriesData[d.properties.name]) {
+                    str = '<span>Country Name: '+ d.properties.name+ '</span><span> Population: '+ countriesData[d.properties.name].population+'</span><span> Continent: '+ continentJson[countriesData[d.properties.name].continentCode]+'</span>';
+                } else {
+                    str = 'No data found.';
+                }
+                d3.select('#populationText').html(str);
+            }
+            
+            
+            
+        </script>
+    </body>
+</html>
